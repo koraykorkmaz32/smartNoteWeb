@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Akıllı Defter Asistanı</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Firebase SDK'ları (Kimlik doğrulama için) -->
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-6 font-sans">
+
+    <!-- GİRİŞ / KAYIT EKRANI -->
+    <div id="login-section" class="max-w-sm mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 space-y-4 mt-10">
+        <h1 class="text-2xl font-bold text-gray-800 text-center">Giriş Yap</h1>
+        <input type="email" id="email" placeholder="E-posta" class="w-full p-2 border rounded">
+        <input type="password" id="password" placeholder="Şifre" class="w-full p-2 border rounded">
+        
+        <button onclick="login()" class="w-full bg-blue-600 text-white font-bold py-2 rounded">Giriş Yap</button>
+        <button onclick="register()" class="w-full bg-gray-600 text-white font-bold py-2 rounded mt-2">Yeni Kayıt Ol</button>
+        <p id="auth-error" class="text-red-500 text-sm text-center"></p>
+    </div>
+
+    <!-- ANA UYGULAMA EKRANI (Başlangıçta Gizli) -->
+    <div id="app-section" class="max-w-md mx-auto bg-white rounded-xl shadow-md overflow-hidden p-6 space-y-6 hidden">
+        
+        <div class="flex justify-between items-center border-b pb-2">
+            <h1 class="text-xl font-bold text-gray-800">Akıllı Defter 📝</h1>
+            <button onclick="logout()" class="text-sm text-red-600 font-bold">Çıkış Yap</button>
+        </div>
+        
+        <!-- Yükleme Bölümü -->
+        <div class="space-y-4 p-4 bg-blue-50 rounded-lg">
+            <h2 class="text-lg font-semibold text-blue-800">Yeni Not Ekle</h2>
+            <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-100 file:text-blue-700"/>
+            <button onclick="uploadImage()" id="uploadBtn" class="w-full bg-blue-600 text-white font-bold py-2 rounded-lg">Sayfayı Tara</button>
+            <p id="uploadStatus" class="text-sm text-center font-medium"></p>
+        </div>
+
+        <!-- Arama Bölümü -->
+        <div class="space-y-4 pt-4 border-t">
+            <div class="flex gap-2">
+                <span class="inline-flex items-center px-3 bg-gray-200 rounded-l-md border border-gray-300">#</span>
+                <input type="text" id="searchInput" placeholder="Ahmet, Borsa vb..." class="rounded-r-lg bg-gray-50 border border-gray-300 w-full p-2.5">
+            </div>
+            <button onclick="searchTags()" class="w-full bg-gray-800 text-white font-bold py-2 rounded-lg">Etiketi Ara</button>
+        </div>
+        <div id="resultsArea" class="space-y-3"></div>
+    </div>
+
+    <script>
+        // --- 1. FIREBASE BAĞLANTISI (BURAYI KENDİ BİLGİLERİNİZLE DOLDURUN) ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyDuJJDmk9238bLwmZ0cBewzY2v0oRUKY4s",
+            authDomain: "smartnote-dcc6d.firebaseapp.com",
+            databaseURL: "https://smartnote-dcc6d-default-rtdb.europe-west1.firebasedatabase.app",
+            projectId: "smartnote-dcc6d",
+            storageBucket: "smartnote-dcc6d.firebasestorage.app",
+            messagingSenderId: "38763164853",
+            appId: "1:38763164853:web:04b837e0dbb7cf04dd3afc",
+            measurementId: "G-HMWQD7YS4J"
+        };
+        firebase.initializeApp(firebaseConfig);
+
+        const SERVER_URL = "https://smartnoteapi-hgkd.onrender.com"; 
+        let currentUserUid = null; // Giriş yapan kullanıcının ID'sini burada tutacağız
+
+        // --- 2. OTURUM TAKİPÇİSİ (Kullanıcı giriş yaptı mı?) ---
+        firebase.auth().onAuthStateChanged((user) => {
+            if (user) {
+                currentUserUid = user.uid; // Firebase'in verdiği eşsiz ID
+                document.getElementById('login-section').classList.add('hidden');
+                document.getElementById('app-section').classList.remove('hidden');
+            } else {
+                currentUserUid = null;
+                document.getElementById('login-section').classList.remove('hidden');
+                document.getElementById('app-section').classList.add('hidden');
+            }
+        });
+
+        // --- 3. GİRİŞ VE KAYIT İŞLEMLERİ ---
+        async function register() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            try { await firebase.auth().createUserWithEmailAndPassword(e, p); } 
+            catch (err) { document.getElementById('auth-error').innerText = err.message; }
+        }
+
+        async function login() {
+            const e = document.getElementById('email').value;
+            const p = document.getElementById('password').value;
+            try { await firebase.auth().signInWithEmailAndPassword(e, p); } 
+            catch (err) { document.getElementById('auth-error').innerText = "Giriş başarısız!"; }
+        }
+
+        function logout() { firebase.auth().signOut(); }
+
+        // --- 4. ARKA PLANA (PYTHON'A) İSTEK ATARKEN KULLANICI ID'SİNİ EKLEME ---
+        
+        async function uploadImage() {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput.files.length === 0) return alert("Fotoğraf seçin!");
+
+            const formData = new FormData();
+            formData.append("file", fileInput.files[0]);
+            formData.append("uid", currentUserUid); // PYTHON'A KİM OLDUĞUMUZU SÖYLÜYORUZ
+
+            document.getElementById('uploadBtn').innerText = "⏳";
+            
+            try {
+                const response = await fetch(`${SERVER_URL}/upload`, { method: "POST", body: formData });
+                document.getElementById('uploadStatus').innerText = response.ok ? "Kaydedildi ✅" : "Hata!";
+            } catch (err) {
+                document.getElementById('uploadStatus').innerText = "Bağlantı hatası!";
+            } finally {
+                document.getElementById('uploadBtn').innerText = "Sayfayı Tara";
+            }
+        }
+
+        async function searchTags() {
+            const tag = document.getElementById('searchInput').value.trim().toLowerCase();
+            const resultsArea = document.getElementById('resultsArea');
+            if (!tag) return;
+
+            // ARAMA YAPARKEN DE PYTHON'A UID GÖNDERİYORUZ
+            try {
+                const response = await fetch(`${SERVER_URL}/search?tag=${tag}&uid=${currentUserUid}`);
+                const results = await response.json();
+                
+                resultsArea.innerHTML = results.length === 0 ? '<p class="text-red-500 text-center">Bulunamadı</p>' : '';
+                results.forEach(note => {
+                    resultsArea.innerHTML += `<div class="p-4 bg-yellow-50 border rounded-lg mt-2"><span class="font-bold">Sayfa: ${note.page_id}</span><p class="mt-2">${note.text}</p></div>`;
+                });
+            } catch (err) { resultsArea.innerHTML = '<p class="text-red-500 text-center">Sunucu hatası</p>'; }
+        }
+    </script>
+</body>
+</html>
