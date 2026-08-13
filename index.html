@@ -142,48 +142,59 @@
             } catch (err) { resultsArea.innerHTML = '<p class="text-red-500 text-center">Sunucu hatası</p>'; }
         }
 
-        // --- 5. PDF ÜRETME VE İNDİRME İŞLEMİ ---
+        // --- 5. PDF ÜRETME VE İNDİRME İŞLEMİ (ŞIK TASARIM) ---
         async function downloadPDF() {
             if (!currentUserUid) return alert("Önce giriş yapmalısınız!");
             
             try {
-                // 1. Tüm notları sunucudan çek (Bu endpoint'i app.py'ye eklediğinizi varsayıyoruz)
                 const response = await fetch(`${SERVER_URL}/get_all?uid=${currentUserUid}`);
+                if (!response.ok) return alert("Sunucudan notlar alınamadı!");
                 
-                if (!response.ok) {
-                    return alert("Sunucudan notlar alınamadı! (app.py güncellenmemiş olabilir)");
-                }
-
                 const notes = await response.json();
-                
                 if (notes.length === 0) return alert("Defterinizde henüz not yok!");
 
-                // 2. Arka planda görünmez bir HTML şablonu oluştur
-                let htmlContent = '<div style="padding: 20px; font-family: sans-serif;">';
-                htmlContent += '<h1 style="text-align: center;">Akıllı Defterim</h1><hr>';
+                // --- TASARIM BAŞLANGICI ---
+                let htmlContent = `
+                <div style="padding: 30px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+                    
+                    <!-- Kapak / Başlık Alanı -->
+                    <div style="text-align: center; margin-bottom: 40px;">
+                        <h1 style="color: #1e40af; font-size: 32px; margin: 0; letter-spacing: -1px;">Akıllı Defter</h1>
+                        <p style="color: #64748b; font-size: 14px; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px;">Dijital Not Arşivi</p>
+                        <div style="height: 3px; background: linear-gradient(to right, #3b82f6, #1d4ed8); margin-top: 20px; border-radius: 2px;"></div>
+                    </div>
+                `;
                 
                 notes.forEach(note => {
                     htmlContent += `
-                        <div style="margin-bottom: 20px; border-bottom: 1px solid #ccc; padding-bottom: 10px;">
-                            <h3 style="color: #333;">Sayfa: ${note.page_id}</h3>
-                            <p style="white-space: pre-wrap; font-size: 14px; line-height: 1.5;">${note.text}</p>
+                    <!-- Her Bir Not Kartı -->
+                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #3b82f6; border-radius: 8px; padding: 25px; margin-bottom: 25px; page-break-inside: avoid;">
+                        
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #cbd5e1; padding-bottom: 10px;">
+                            <span style="background-color: #dbeafe; color: #1e40af; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 14px;">
+                                📄 Sayfa: ${note.page_id}
+                            </span>
                         </div>
+                        
+                        <!-- Not İçeriği (El yazısından dönen metin) -->
+                        <p style="white-space: pre-wrap; font-size: 15px; line-height: 1.8; color: #334155; margin: 0;">${note.text}</p>
+                    </div>
                     `;
                 });
+                
                 htmlContent += '</div>';
+                // --- TASARIM BİTİŞİ ---
 
-                // 3. Geçici bir elemente koy
                 const element = document.createElement('div');
                 element.innerHTML = htmlContent;
                 
-                alert("PDF cihazınızda oluşturuluyor, lütfen bekleyin...");
+                alert("PDF şık bir formatta hazırlanıyor... Lütfen indirme ekranı gelene kadar bekleyin.");
                 
-                // 4. html2pdf ile PDF'e çevir ve indir
                 const opt = {
-                    margin:       10,
-                    filename:     'Akilli_Defterim.pdf',
-                    image:        { type: 'jpeg', quality: 0.98 },
-                    html2canvas:  { scale: 2 },
+                    margin:       [10, 5, 10, 5],
+                    filename:     'Akilli_Defter_Arsivi.pdf',
+                    image:        { type: 'jpeg', quality: 1 },
+                    html2canvas:  { scale: 2, useCORS: true, logging: false },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
