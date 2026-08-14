@@ -3,97 +3,173 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Akıllı Defter Asistanı</title>
+    <title>Akıllı Defter | Dijital Arşiv</title>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <!-- Firebase SDK'ları -->
     <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.5.0/firebase-auth-compat.js"></script>
-
-    <!-- PDF Oluşturma Kütüphanesi -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
-</head>
-<body class="bg-gray-100 min-h-screen p-6 font-sans">
 
-    <!-- GİRİŞ / KAYIT EKRANI (YENİ TASARIM) -->
-    <div id="login-section" class="max-w-sm mx-auto bg-white rounded-xl shadow-lg overflow-hidden p-8 space-y-6 mt-10">
+    <style>
+        /* Modern ve temiz font ayarı */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', sans-serif; }
+        
+        /* Özel Scrollbar */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #f1f5f9; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-900 min-h-screen">
+
+    <!-- TOAST BİLDİRİM ALANI -->
+    <div id="toast-container" class="fixed top-5 right-5 z-50 flex flex-col gap-2"></div>
+
+    <!-- GİRİŞ EKRANI -->
+    <div id="login-section" class="max-w-md mx-auto mt-20 p-8 bg-white border border-slate-200 rounded-2xl shadow-sm space-y-6">
         <div class="text-center">
-            <h1 class="text-3xl font-extrabold text-blue-600 mb-1">Akıllı Defter</h1>
-            <p class="text-sm text-gray-500">Dijital not arşivinize hoş geldiniz</p>
+            <h1 class="text-2xl font-bold tracking-tight text-slate-900">Akıllı Defter</h1>
+            <p class="text-sm text-slate-500 mt-1">Notlarınızı dijitalleştirin ve kolayca bulun</p>
         </div>
 
-        <!-- Google ile Giriş Butonu -->
-        <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-3 bg-white border border-gray-300 text-gray-700 font-semibold py-2.5 rounded-lg hover:bg-gray-50 transition-colors">
+        <button onclick="loginWithGoogle()" class="w-full flex items-center justify-center gap-2 bg-white border border-slate-300 text-slate-700 font-medium py-2.5 rounded-lg hover:bg-slate-50 transition-colors">
             <svg class="w-5 h-5" viewBox="0 0 24 24">
                 <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                 <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
             </svg>
-            Google ile Devam Et
+            Google ile Giriş Yap
         </button>
 
-        <div class="relative">
-            <div class="absolute inset-0 flex items-center">
-                <div class="w-full border-t border-gray-300"></div>
-            </div>
-            <div class="relative flex justify-center text-sm">
-                <span class="px-2 bg-white text-gray-500">veya e-posta ile</span>
-            </div>
+        <div class="relative flex items-center py-2">
+            <div class="flex-grow border-t border-slate-200"></div>
+            <span class="flex-shrink-0 mx-4 text-slate-400 text-xs">veya</span>
+            <div class="flex-grow border-t border-slate-200"></div>
         </div>
 
-        <!-- E-posta ile Giriş -->
-        <div class="space-y-3">
-            <input type="email" id="email" placeholder="E-posta adresiniz" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            <input type="password" id="password" placeholder="Şifreniz" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none">
-            
-            <div class="flex justify-end">
-                <button onclick="resetPassword()" class="text-xs text-blue-600 hover:underline">Şifremi Unuttum</button>
+        <div class="space-y-4">
+            <input type="email" id="email" placeholder="E-posta" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all">
+            <input type="password" id="password" placeholder="Şifre" class="w-full p-3 bg-slate-50 border border-slate-200 rounded-lg focus:ring-2 focus:ring-slate-900 focus:border-transparent outline-none transition-all">
+            <button onclick="login()" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-medium py-3 rounded-lg transition-colors">Giriş Yap</button>
+            <div class="flex justify-between text-sm">
+                <button onclick="register()" class="text-slate-600 hover:text-slate-900 font-medium">Hesap Oluştur</button>
+                <button onclick="resetPassword()" class="text-slate-600 hover:text-slate-900">Şifremi Unuttum</button>
             </div>
         </div>
-        
-        <div class="flex gap-2 pt-2">
-            <button onclick="login()" class="w-1/2 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 rounded-lg transition-colors">Giriş Yap</button>
-            <button onclick="register()" class="w-1/2 bg-gray-100 hover:bg-gray-200 text-gray-800 font-bold py-2.5 rounded-lg transition-colors">Kayıt Ol</button>
-        </div>
-        
-        <p id="auth-error" class="text-red-500 text-sm text-center font-medium h-4"></p>
     </div>
 
     <!-- ANA UYGULAMA EKRANI -->
-    <div id="app-section" class="max-w-md mx-auto bg-white rounded-xl shadow-lg overflow-hidden p-6 space-y-6 hidden mt-4">
+    <div id="app-section" class="max-w-3xl mx-auto mt-8 bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden hidden">
         
-        <div class="flex justify-between items-center border-b pb-3">
-            <div>
-                <h1 class="text-xl font-extrabold text-gray-800">Akıllı Defter 📝</h1>
-                <p id="user-email-display" class="text-xs text-gray-500"></p>
+        <!-- Üst Menü -->
+        <div class="flex justify-between items-center px-6 py-4 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 bg-slate-900 text-white rounded flex items-center justify-center font-bold">A</div>
+                <span class="font-semibold text-slate-900">Akıllı Defter</span>
             </div>
-            <button onclick="logout()" class="text-sm bg-red-50 text-red-600 font-bold px-3 py-1.5 rounded-lg hover:bg-red-100">Çıkış</button>
-        </div>
-        
-        <!-- Yükleme Bölümü -->
-        <div class="space-y-4 p-5 bg-blue-50/50 border border-blue-100 rounded-xl">
-            <h2 class="text-lg font-semibold text-blue-900">Yeni Not Ekle</h2>
-            <input type="file" id="fileInput" accept="image/*" class="w-full text-sm text-gray-500 file:py-2 file:px-4 file:rounded-full file:border-0 file:bg-blue-100 file:text-blue-700 hover:file:bg-blue-200 cursor-pointer"/>
-            <button onclick="uploadImage()" id="uploadBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg shadow-sm transition-all">📸 Sayfayı Tara ve Kaydet</button>
-            <p id="uploadStatus" class="text-sm text-center font-medium h-4 text-blue-600"></p>
+            <div class="flex items-center gap-4">
+                <span id="user-email-display" class="text-sm text-slate-500 hidden sm:block"></span>
+                <button onclick="logout()" class="text-sm text-slate-500 hover:text-red-600 transition-colors">Çıkış</button>
+            </div>
         </div>
 
-        <!-- Arama Bölümü -->
-        <div class="space-y-4 pt-4">
-            <h2 class="text-sm font-bold text-gray-500 uppercase tracking-wider">Notlarda Ara</h2>
-            <div class="flex gap-2">
-                <span class="inline-flex items-center px-4 bg-gray-100 rounded-l-lg border border-gray-300 text-gray-500">#</span>
-                <input type="text" id="searchInput" placeholder="Örn: Borsa, Toplantı..." class="rounded-r-lg bg-gray-50 border border-gray-300 w-full p-3 focus:ring-2 focus:ring-blue-500 outline-none">
-            </div>
-            <button onclick="searchTags()" class="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3 rounded-lg shadow-sm transition-colors">🔎 Etiketi Ara</button>
+        <div class="p-6 grid grid-cols-1 md:grid-cols-3 gap-8">
             
-            <button onclick="downloadPDF()" class="w-full bg-red-50 text-red-600 border border-red-200 font-bold py-3 rounded-lg mt-2 hover:bg-red-100 transition-colors">📄 Tüm Defteri PDF İndir</button>
+            <!-- SOL PANEL: Yükleme & Arama İşlevleri -->
+            <div class="md:col-span-1 space-y-6">
+                
+                <!-- Yükleme Alanı -->
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Yeni Evrak Ekle</h3>
+                    <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-slate-200 border-dashed rounded-xl cursor-pointer hover:bg-slate-50 hover:border-slate-300 transition-all">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-6 h-6 text-slate-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+                            <p class="text-xs text-slate-500 font-medium">Sayfa seçin veya çekin</p>
+                        </div>
+                        <input type="file" id="fileInput" accept="image/*" class="hidden" onchange="updateFileName()"/>
+                    </label>
+                    <p id="fileNameDisplay" class="text-xs text-slate-400 mt-2 text-center hidden"></p>
+                    <button onclick="uploadImage()" id="uploadBtn" class="mt-3 w-full bg-slate-900 text-white font-medium py-2.5 rounded-lg hover:bg-slate-800 transition-colors">Sisteme Yükle</button>
+                </div>
+
+                <hr class="border-slate-100">
+
+                <!-- Arama Alanı -->
+                <div>
+                    <h3 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3">Arşivde Ara</h3>
+                    <div class="relative">
+                        <input type="text" id="searchInput" placeholder="Etiket veya kelime..." class="w-full pl-3 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-slate-900 outline-none transition-all">
+                        <button onclick="searchTags()" class="absolute right-2 top-2 p-1 bg-white border border-slate-200 rounded text-slate-600 hover:bg-slate-100">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- PDF İndir -->
+                <button onclick="downloadPDF()" class="w-full flex items-center justify-center gap-2 bg-white border border-slate-200 text-slate-700 font-medium py-2.5 rounded-lg hover:bg-slate-50 transition-colors text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Tüm Arşivi İndir (PDF)
+                </button>
+            </div>
+
+            <!-- SAĞ PANEL: Çıktı / Rapor Alanı -->
+            <div class="md:col-span-2 bg-slate-50 p-5 rounded-xl border border-slate-100 h-[600px] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-sm font-semibold text-slate-700">Evrak Görüntüleyici</h2>
+                </div>
+                
+                <div id="resultsArea" class="space-y-4">
+                    <!-- Boş Durum (Empty State) -->
+                    <div id="empty-state" class="flex flex-col items-center justify-center h-full text-slate-400 py-20">
+                        <svg class="w-12 h-12 mb-3 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                        <p class="text-sm">Görüntülenecek evrak yok.</p>
+                        <p class="text-xs mt-1">Arama yapın veya yeni sayfa yükleyin.</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div id="resultsArea" class="space-y-4 mt-4"></div>
     </div>
 
     <script>
+        // --- 0. TOAST BİLDİRİM FONKSİYONU (alert() yerine) ---
+        function showToast(message, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            const bgColor = type === 'success' ? 'bg-slate-900' : (type === 'error' ? 'bg-red-600' : 'bg-blue-600');
+            
+            toast.className = `${bgColor} text-white px-4 py-3 rounded-lg shadow-lg text-sm font-medium transform transition-all duration-300 translate-x-full opacity-0 flex items-center gap-2`;
+            toast.innerHTML = `<span>${message}</span>`;
+            
+            container.appendChild(toast);
+            
+            // Animasyonla ekranda belirme
+            setTimeout(() => {
+                toast.classList.remove('translate-x-full', 'opacity-0');
+            }, 10);
+            
+            // 3 saniye sonra kaybolma
+            setTimeout(() => {
+                toast.classList.add('translate-x-full', 'opacity-0');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function updateFileName() {
+            const input = document.getElementById('fileInput');
+            const display = document.getElementById('fileNameDisplay');
+            if (input.files.length > 0) {
+                display.innerText = "Seçilen dosya: " + input.files[0].name;
+                display.classList.remove('hidden');
+            } else {
+                display.classList.add('hidden');
+            }
+        }
+
         // --- 1. FIREBASE BAĞLANTISI ---
         const firebaseConfig = {
             apiKey: "AIzaSyDuJJDmk9238bLwmZ0cBewzY2v0oRUKY4s",
@@ -116,52 +192,38 @@
                 currentUserUid = user.uid; 
                 document.getElementById('login-section').classList.add('hidden');
                 document.getElementById('app-section').classList.remove('hidden');
-                // Kullanıcının e-postasını ekranda göster
                 document.getElementById('user-email-display').innerText = user.email;
             } else {
                 currentUserUid = null;
                 document.getElementById('login-section').classList.remove('hidden');
                 document.getElementById('app-section').classList.add('hidden');
-                document.getElementById('email').value = '';
-                document.getElementById('password').value = '';
             }
         });
 
-        // --- 3. YENİ: GOOGLE İLE GİRİŞ ---
+        // --- 3. KİMLİK DOĞRULAMA İŞLEMLERİ ---
         async function loginWithGoogle() {
-            const provider = new firebase.auth.GoogleAuthProvider();
             try {
-                await firebase.auth().signInWithPopup(provider);
-                document.getElementById('auth-error').innerText = "";
-            } catch (err) {
-                document.getElementById('auth-error').innerText = "Google girişi iptal edildi.";
-            }
+                await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider());
+                showToast("Giriş başarılı!");
+            } catch (err) { showToast("Giriş iptal edildi.", "error"); }
         }
 
-        // --- 4. YENİ: ŞİFRE SIFIRLAMA ---
         async function resetPassword() {
             const email = document.getElementById('email').value;
-            if (!email) {
-                document.getElementById('auth-error').innerText = "Lütfen e-posta adresinizi yazıp tekrar tıklayın.";
-                return;
-            }
+            if (!email) return showToast("Lütfen e-posta adresinizi girin.", "error");
             try {
                 await firebase.auth().sendPasswordResetEmail(email);
-                document.getElementById('auth-error').innerText = "";
-                alert("Şifre sıfırlama bağlantısı e-posta adresinize gönderildi! (Spam klasörünü kontrol etmeyi unutmayın)");
-            } catch (err) {
-                document.getElementById('auth-error').innerText = "Hesap bulunamadı veya geçersiz e-posta.";
-            }
+                showToast("Şifre sıfırlama e-postası gönderildi!");
+            } catch (err) { showToast("Hesap bulunamadı.", "error"); }
         }
 
-        // --- 5. STANDART GİRİŞ/KAYIT ---
         async function register() {
             const e = document.getElementById('email').value;
             const p = document.getElementById('password').value;
             try { 
                 await firebase.auth().createUserWithEmailAndPassword(e, p); 
-                document.getElementById('auth-error').innerText = "";
-            } catch (err) { document.getElementById('auth-error').innerText = "Kayıt hatası: Şifre en az 6 hane olmalı."; }
+                showToast("Hesap başarıyla oluşturuldu!");
+            } catch (err) { showToast("Hata: Şifre en az 6 hane olmalı.", "error"); }
         }
 
         async function login() {
@@ -169,37 +231,44 @@
             const p = document.getElementById('password').value;
             try { 
                 await firebase.auth().signInWithEmailAndPassword(e, p); 
-                document.getElementById('auth-error').innerText = "";
-            } catch (err) { document.getElementById('auth-error').innerText = "E-posta veya şifre hatalı!"; }
+                showToast("Giriş başarılı!");
+            } catch (err) { showToast("E-posta veya şifre hatalı!", "error"); }
         }
 
-        function logout() { firebase.auth().signOut(); }
+        function logout() { 
+            firebase.auth().signOut(); 
+            showToast("Çıkış yapıldı.", "info");
+        }
 
-        // --- 6. ARKA PLAN İŞLEMLERİ (Aynı Kalanlar) ---
+        // --- 4. ARKA PLAN İŞLEMLERİ ---
         async function uploadImage() {
             const fileInput = document.getElementById('fileInput');
-            if (fileInput.files.length === 0) return alert("Fotoğraf seçin!");
+            if (fileInput.files.length === 0) return showToast("Lütfen önce bir fotoğraf seçin.", "error");
 
             const formData = new FormData();
             formData.append("file", fileInput.files[0]);
             formData.append("uid", currentUserUid); 
 
             const btn = document.getElementById('uploadBtn');
-            const status = document.getElementById('uploadStatus');
-            
-            btn.innerText = "⏳ Taranıyor, Lütfen Bekleyin...";
-            btn.classList.add("opacity-70", "cursor-not-allowed");
-            status.innerText = "";
+            btn.innerText = "Yükleniyor...";
+            btn.disabled = true;
+            btn.classList.add("opacity-50");
             
             try {
                 const response = await fetch(`${SERVER_URL}/upload`, { method: "POST", body: formData });
-                status.innerText = response.ok ? "✅ Başarıyla kaydedildi!" : "❌ Sunucu Hatası!";
+                if (response.ok) {
+                    showToast("Evrak başarıyla sisteme işlendi!");
+                    fileInput.value = "";
+                    document.getElementById('fileNameDisplay').classList.add('hidden');
+                } else {
+                    showToast("Sunucu işleme sırasında hata verdi.", "error");
+                }
             } catch (err) {
-                status.innerText = "❌ Bağlantı hatası!";
+                showToast("Sunucuya bağlanılamadı.", "error");
             } finally {
-                btn.innerText = "📸 Sayfayı Tara ve Kaydet";
-                btn.classList.remove("opacity-70", "cursor-not-allowed");
-                fileInput.value = ""; // Seçili dosyayı temizle
+                btn.innerText = "Sisteme Yükle";
+                btn.disabled = false;
+                btn.classList.remove("opacity-50");
             }
         }
 
@@ -208,50 +277,63 @@
             const resultsArea = document.getElementById('resultsArea');
             if (!tag) return;
 
-            resultsArea.innerHTML = '<p class="text-blue-500 text-center text-sm">Aranıyor...</p>';
+            resultsArea.innerHTML = `
+                <div class="flex justify-center items-center py-10">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-slate-900"></div>
+                </div>`;
 
             try {
                 const response = await fetch(`${SERVER_URL}/search?tag=${tag}&uid=${currentUserUid}`);
                 const results = await response.json();
                 
-                resultsArea.innerHTML = results.length === 0 ? '<p class="text-gray-500 text-center text-sm bg-gray-50 p-4 rounded-lg">Bu etiketle eşleşen not bulunamadı.</p>' : '';
-                
+                if (results.length === 0) {
+                    resultsArea.innerHTML = `<p class="text-slate-500 text-center text-sm py-10">"${tag}" ile eşleşen kayıt bulunamadı.</p>`;
+                    return;
+                }
+
+                resultsArea.innerHTML = '';
                 results.forEach(note => {
                     resultsArea.innerHTML += `
-                    <div class="p-5 bg-white border border-gray-200 shadow-sm rounded-xl transition-all hover:shadow-md">
-                        <span class="inline-block bg-blue-100 text-blue-800 text-xs px-2.5 py-1 rounded-full font-bold mb-3">📄 Sayfa: ${note.page_id}</span>
-                        <p class="text-gray-700 text-sm leading-relaxed">${note.text}</p>
+                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
+                        <div class="flex justify-between items-center border-b border-slate-100 pb-3 mb-3">
+                            <span class="text-xs font-semibold text-slate-400">EVRAK NO: ${note.page_id}</span>
+                            <span class="bg-slate-100 text-slate-600 text-xs px-2 py-1 rounded font-medium">Bulunan: #${tag}</span>
+                        </div>
+                        <p class="text-slate-700 text-sm leading-relaxed whitespace-pre-wrap">${note.text}</p>
                     </div>`;
                 });
-            } catch (err) { resultsArea.innerHTML = '<p class="text-red-500 text-center text-sm">Sunucuya bağlanılamadı.</p>'; }
+            } catch (err) { 
+                resultsArea.innerHTML = '<p class="text-red-500 text-center text-sm">Arama sırasında bir hata oluştu.</p>'; 
+            }
         }
 
         async function downloadPDF() {
-            if (!currentUserUid) return alert("Önce giriş yapmalısınız!");
+            if (!currentUserUid) return showToast("Önce giriş yapmalısınız!", "error");
+            
+            showToast("Evraklar derleniyor, PDF hazırlanıyor...", "info");
             
             try {
                 const response = await fetch(`${SERVER_URL}/get_all?uid=${currentUserUid}`);
-                if (!response.ok) return alert("Sunucudan notlar alınamadı!");
+                if (!response.ok) return showToast("Sunucudan veriler alınamadı.", "error");
                 
                 const notes = await response.json();
-                if (notes.length === 0) return alert("Defterinizde henüz not yok!");
+                if (notes.length === 0) return showToast("Arşivinizde henüz evrak yok.", "error");
 
                 let htmlContent = `
-                <div style="padding: 30px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
-                    <div style="text-align: center; margin-bottom: 40px;">
-                        <h1 style="color: #1e40af; font-size: 32px; margin: 0; letter-spacing: -1px;">Akıllı Defter</h1>
-                        <p style="color: #64748b; font-size: 14px; margin-top: 5px; text-transform: uppercase; letter-spacing: 2px;">Dijital Not Arşivi</p>
-                        <div style="height: 3px; background: linear-gradient(to right, #3b82f6, #1d4ed8); margin-top: 20px; border-radius: 2px;"></div>
+                <div style="padding: 40px; font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;">
+                    <div style="margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
+                        <h1 style="color: #0f172a; font-size: 28px; margin: 0; font-weight: bold;">AKILLI DEFTER ARŞİVİ</h1>
+                        <p style="color: #64748b; font-size: 12px; margin-top: 5px; text-transform: uppercase;">Dijital Evrak Raporu</p>
                     </div>
                 `;
                 
                 notes.forEach(note => {
                     htmlContent += `
-                    <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-left: 5px solid #3b82f6; border-radius: 8px; padding: 25px; margin-bottom: 25px; page-break-inside: avoid;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 2px dashed #cbd5e1; padding-bottom: 10px;">
-                            <span style="background-color: #dbeafe; color: #1e40af; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 14px;">📄 Sayfa: ${note.page_id}</span>
+                    <div style="margin-bottom: 30px; page-break-inside: avoid;">
+                        <div style="background-color: #f8fafc; padding: 8px 12px; border-left: 4px solid #0f172a; margin-bottom: 12px;">
+                            <span style="font-size: 11px; font-weight: bold; color: #475569; letter-spacing: 1px;">EVRAK REFERANS: ${note.page_id}</span>
                         </div>
-                        <p style="white-space: pre-wrap; font-size: 15px; line-height: 1.8; color: #334155; margin: 0;">${note.text}</p>
+                        <p style="white-space: pre-wrap; font-size: 13px; line-height: 1.6; color: #334155; margin: 0;">${note.text}</p>
                     </div>`;
                 });
                 htmlContent += '</div>';
@@ -259,20 +341,20 @@
                 const element = document.createElement('div');
                 element.innerHTML = htmlContent;
                 
-                alert("PDF şık bir formatta hazırlanıyor... Lütfen indirme ekranı gelene kadar bekleyin.");
-                
                 const opt = {
-                    margin:       [10, 5, 10, 5],
-                    filename:     'Akilli_Defter_Arsivi.pdf',
+                    margin:       [10, 10, 10, 10],
+                    filename:     'Akilli_Defter_Raporu.pdf',
                     image:        { type: 'jpeg', quality: 1 },
                     html2canvas:  { scale: 2, useCORS: true, logging: false },
                     jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
                 };
 
-                html2pdf().set(opt).from(element).save();
+                html2pdf().set(opt).from(element).save().then(() => {
+                    showToast("PDF cihazınıza indirildi!");
+                });
 
             } catch (error) {
-                alert("PDF oluşturulurken bir hata oluştu: " + error.message);
+                showToast("PDF oluşturulamadı: " + error.message, "error");
             }
         }
     </script>
